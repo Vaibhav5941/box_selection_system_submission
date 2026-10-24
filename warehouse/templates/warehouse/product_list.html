@@ -1,0 +1,32 @@
+{% extends "warehouse/base.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>Products</h1>
+  <a class="btn btn-primary" href="{% url 'warehouse:product_create' %}">Add product</a>
+</div>
+{% if object_list %}
+<div class="card table-wrap">
+  <table>
+    <thead><tr><th>Name</th><th>SKU</th><th>L × W × H (cm)</th><th>Weight (kg)</th><th></th></tr></thead>
+    <tbody>
+    {% for product in object_list %}
+      <tr>
+        <td><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></td>
+        <td>{{ product.sku }}</td>
+        <td>{{ product.length|floatformat:"-2" }} × {{ product.width|floatformat:"-2" }} × {{ product.height|floatformat:"-2" }}</td>
+        <td>{{ product.weight|floatformat:"-3" }}</td>
+        <td class="row-actions">
+          <a href="{% url 'warehouse:product_update' product.pk %}">Edit</a>
+          <a href="{% url 'warehouse:product_delete' product.pk %}">Delete</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "warehouse/_pagination.html" %}
+{% else %}
+<p class="card empty">No products yet. <a href="{% url 'warehouse:product_create' %}">Add your first product</a>.</p>
+{% endif %}
+{% endblock %}

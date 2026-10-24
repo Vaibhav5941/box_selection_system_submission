@@ -1,0 +1,49 @@
+{% extends "warehouse/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="stats">
+  <a class="stat card" href="{% url 'warehouse:product_list' %}"><span class="stat-number">{{ product_count }}</span> Products</a>
+  <a class="stat card" href="{% url 'warehouse:box_list' %}"><span class="stat-number">{{ box_count }}</span> Boxes</a>
+  <a class="stat card" href="{% url 'warehouse:order_list' %}"><span class="stat-number">{{ order_count }}</span> Orders</a>
+</div>
+
+{% if not product_count or not box_count %}
+<section class="card">
+  <h2>Getting started</h2>
+  <ol>
+    <li>{% if box_count %}✅{% endif %} <a href="{% url 'warehouse:box_create' %}">Add your shipping boxes</a></li>
+    <li>{% if product_count %}✅{% endif %} <a href="{% url 'warehouse:product_create' %}">Add your products</a></li>
+    <li><a href="{% url 'warehouse:order_create' %}">Create an order</a> and view its box recommendation</li>
+  </ol>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="section-head">
+    <h2>Recent orders</h2>
+    <a class="btn btn-primary" href="{% url 'warehouse:order_create' %}">New order</a>
+  </div>
+  {% if recent_orders %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Order</th><th>Units</th><th>Total weight (kg)</th><th>Created</th><th></th></tr></thead>
+      <tbody>
+      {% for order in recent_orders %}
+        <tr>
+          <td><a href="{{ order.get_absolute_url }}">{{ order }}</a></td>
+          <td>{{ order.total_units }}</td>
+          <td>{{ order.total_weight|floatformat:"-3" }}</td>
+          <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+          <td><a href="{% url 'warehouse:order_recommendation' order.pk %}">Recommend box</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No orders yet. Create your first order to get a box recommendation.</p>
+  {% endif %}
+</section>
+{% endblock %}

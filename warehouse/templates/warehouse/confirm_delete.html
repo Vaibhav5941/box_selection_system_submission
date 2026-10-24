@@ -1,0 +1,13 @@
+{% extends "warehouse/base.html" %}
+{% block title %}Delete {{ object }}{% endblock %}
+{% block content %}
+<h1>Delete {{ object }}?</h1>
+<form method="post" class="card">
+  {% csrf_token %}
+  <p>This action cannot be undone.</p>
+  <div class="actions">
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a class="btn" href="{{ cancel_url }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

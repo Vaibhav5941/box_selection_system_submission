@@ -1,0 +1,20 @@
+{% extends "warehouse/base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>{{ product.name }}</h1>
+  <div class="actions">
+    <a class="btn" href="{% url 'warehouse:product_update' product.pk %}">Edit</a>
+    <a class="btn btn-danger" href="{% url 'warehouse:product_delete' product.pk %}">Delete</a>
+  </div>
+</div>
+<dl class="card details">
+  <dt>SKU</dt><dd>{{ product.sku }}</dd>
+  <dt>Length</dt><dd>{{ product.length|floatformat:"-2" }} cm</dd>
+  <dt>Width</dt><dd>{{ product.width|floatformat:"-2" }} cm</dd>
+  <dt>Height</dt><dd>{{ product.height|floatformat:"-2" }} cm</dd>
+  <dt>Weight</dt><dd>{{ product.weight|floatformat:"-3" }} kg</dd>
+  <dt>Added</dt><dd>{{ product.created_at|date:"Y-m-d H:i" }}</dd>
+</dl>
+<p><a href="{% url 'warehouse:product_list' %}">← All products</a></p>
+{% endblock %}

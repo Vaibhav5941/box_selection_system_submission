@@ -1,0 +1,48 @@
+{% extends "warehouse/base.html" %}
+{% block title %}New order{% endblock %}
+{% block content %}
+<h1>New order</h1>
+
+{% if no_products %}
+  <p class="card empty">There are no products to order yet. <a href="{% url 'warehouse:product_create' %}">Add a product</a> first.</p>
+{% else %}
+<form method="post" class="card form" novalidate>
+  {% csrf_token %}
+  {% for field in form %}
+    {% include "warehouse/_field.html" with field=field %}
+  {% endfor %}
+
+  <h2>Items</h2>
+  <p class="help">Choose a product and quantity for each line. Leave unused lines blank.</p>
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}
+    <div class="message error">{{ formset.non_form_errors }}</div>
+  {% endif %}
+  <div class="table-wrap">
+    <table class="items-table">
+      <thead><tr><th>Product</th><th>Quantity</th></tr></thead>
+      <tbody>
+      {% for item_form in formset %}
+        <tr>
+          <td class="{% if item_form.product.errors %}has-error{% endif %}">
+            {{ item_form.id }}
+            {{ item_form.product }}
+            {% for error in item_form.product.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+          </td>
+          <td class="{% if item_form.quantity.errors %}has-error{% endif %}">
+            {{ item_form.quantity }}
+            {% for error in item_form.quantity.errors %}<p class="error-text">{{ error }}</p>{% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button type="submit" class="btn btn-primary">Create order</button>
+    <a class="btn" href="{% url 'warehouse:order_list' %}">Cancel</a>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

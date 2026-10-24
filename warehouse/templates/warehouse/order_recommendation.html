@@ -1,0 +1,83 @@
+{% extends "warehouse/base.html" %}
+{% block title %}Recommendation for {{ order }}{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>Box recommendation</h1>
+  <a class="btn" href="{{ order.get_absolute_url }}">← {{ order }}</a>
+</div>
+
+{% if input_error %}
+  <div class="message error" role="alert">
+    <strong>Cannot evaluate this order.</strong> {{ input_error }}
+  </div>
+{% else %}
+
+  <section class="card">
+    <h2>Order summary</h2>
+    <ul class="plain">
+      {% for item in order.items.all %}
+        <li>{{ item.quantity }} × {{ item.product.name }} <span class="muted">({{ item.line_weight|floatformat:"-3" }} kg)</span></li>
+      {% endfor %}
+    </ul>
+    <p><strong>Total weight:</strong> {{ result.total_weight|floatformat:"-3" }} kg · <strong>Units:</strong> {{ result.total_units }}</p>
+  </section>
+
+  {% if result.has_recommendation %}
+    <section class="card recommendation">
+      <h2>Recommended box</h2>
+      <p class="big">{{ result.recommended.box.name }}</p>
+      <p>
+        Internal {{ result.recommended.box.length|floatformat:"-2" }} × {{ result.recommended.box.width|floatformat:"-2" }} × {{ result.recommended.box.height|floatformat:"-2" }} cm ·
+        max {{ result.recommended.box.max_weight|floatformat:"-3" }} kg ·
+        cost <strong>{{ result.recommended.box.cost|floatformat:2 }}</strong>
+      </p>
+      <p class="muted">{{ result.message }}</p>
+    </section>
+
+    <section class="card">
+      <h2>All eligible boxes (cheapest first)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Box</th><th>Internal L × W × H (cm)</th><th>Max weight (kg)</th><th>Cost</th></tr></thead>
+          <tbody>
+          {% for evaluation in result.eligible_boxes %}
+            <tr{% if forloop.first %} class="highlight"{% endif %}>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ evaluation.box.name }}{% if forloop.first %} <span class="badge">Recommended</span>{% endif %}</td>
+              <td>{{ evaluation.box.length|floatformat:"-2" }} × {{ evaluation.box.width|floatformat:"-2" }} × {{ evaluation.box.height|floatformat:"-2" }}</td>
+              <td>{{ evaluation.box.max_weight|floatformat:"-3" }}</td>
+              <td>{{ evaluation.box.cost|floatformat:2 }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <div class="message error" role="alert">
+      <strong>{{ result.message }}</strong>
+    </div>
+  {% endif %}
+
+  {% if result.rejected_boxes %}
+    <section class="card">
+      <h2>Boxes ruled out</h2>
+      {% for evaluation in result.rejected_boxes %}
+        <div class="rejected">
+          <h3>{{ evaluation.box.name }} <span class="muted">(cost {{ evaluation.box.cost|floatformat:2 }})</span></h3>
+          <ul>
+            {% for rejection in evaluation.rejections %}<li>{{ rejection.message }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <aside class="message warning" role="note">
+    <strong>Limitation:</strong> {{ result.disclaimer }}
+    {% if result.total_units > 1 and result.has_recommendation %}
+      This order has {{ result.total_units }} units, so please confirm the physical fit before shipping.
+    {% endif %}
+  </aside>
+{% endif %}
+{% endblock %}

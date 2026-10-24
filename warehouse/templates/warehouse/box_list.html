@@ -1,0 +1,32 @@
+{% extends "warehouse/base.html" %}
+{% block title %}Boxes{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>Shipping boxes</h1>
+  <a class="btn btn-primary" href="{% url 'warehouse:box_create' %}">Add box</a>
+</div>
+{% if object_list %}
+<div class="card table-wrap">
+  <table>
+    <thead><tr><th>Name</th><th>Internal L × W × H (cm)</th><th>Max weight (kg)</th><th>Cost</th><th></th></tr></thead>
+    <tbody>
+    {% for box in object_list %}
+      <tr>
+        <td><a href="{{ box.get_absolute_url }}">{{ box.name }}</a></td>
+        <td>{{ box.length|floatformat:"-2" }} × {{ box.width|floatformat:"-2" }} × {{ box.height|floatformat:"-2" }}</td>
+        <td>{{ box.max_weight|floatformat:"-3" }}</td>
+        <td>{{ box.cost|floatformat:2 }}</td>
+        <td class="row-actions">
+          <a href="{% url 'warehouse:box_update' box.pk %}">Edit</a>
+          <a href="{% url 'warehouse:box_delete' box.pk %}">Delete</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "warehouse/_pagination.html" %}
+{% else %}
+<p class="card empty">No boxes yet. <a href="{% url 'warehouse:box_create' %}">Add your first box</a>.</p>
+{% endif %}
+{% endblock %}

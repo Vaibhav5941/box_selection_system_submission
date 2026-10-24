@@ -1,0 +1,32 @@
+{% extends "warehouse/base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<div class="section-head">
+  <h1>Orders</h1>
+  <a class="btn btn-primary" href="{% url 'warehouse:order_create' %}">New order</a>
+</div>
+{% if object_list %}
+<div class="card table-wrap">
+  <table>
+    <thead><tr><th>Order</th><th>Units</th><th>Total weight (kg)</th><th>Created</th><th></th></tr></thead>
+    <tbody>
+    {% for order in object_list %}
+      <tr>
+        <td><a href="{{ order.get_absolute_url }}">{{ order }}</a></td>
+        <td>{{ order.total_units }}</td>
+        <td>{{ order.total_weight|floatformat:"-3" }}</td>
+        <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+        <td class="row-actions">
+          <a href="{% url 'warehouse:order_recommendation' order.pk %}">Recommend box</a>
+          <a href="{% url 'warehouse:order_delete' order.pk %}">Delete</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "warehouse/_pagination.html" %}
+{% else %}
+<p class="card empty">No orders yet. <a href="{% url 'warehouse:order_create' %}">Create the first order</a>.</p>
+{% endif %}
+{% endblock %}
