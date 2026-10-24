@@ -1,182 +1,205 @@
-# AI-Assisted Box Selection System
+# Box Selection System
 
-A small Django warehouse application that recommends the cheapest suitable shipping box for an order, based on product dimensions and weight, box internal dimensions, box weight capacity, and box cost.
+A Django application that helps warehouse staff choose a suitable shipping box for an ecommerce order. It considers product dimensions, weight, box capacity and cost, then lists the boxes that meet its selection rules from cheapest to most expensive.
 
-> **Important limitation:** the recommendation is a *simplified selection*, not a 3D packing solver. It checks that each product fits the box on its own (with rotation), then checks total weight and total volume. It **cannot guarantee** that several products physically fit together in the same box. See [Assumptions and limitations](#assumptions-and-limitations).
+## Overview
+
+When an order is ready to ship, the warehouse needs to choose a box that can accommodate the products without exceeding its weight limit. This project provides a simple interface for managing products, boxes and orders, along with a recommendation page for comparing suitable boxes.
+
+The application is built with Django and SQLite and can be run locally without external services or API keys.
 
 ## Features
 
-- **Products**: create, list, view, update, delete (name, SKU, length, width, height, weight).
-- **Shipping boxes**: create, list, view, update, delete (name, internal dimensions, max weight, cost).
-- **Orders**: create an order with one or more products and quantities; order detail page lists products, quantities and total weight; delete orders.
-- **Box recommendation**: dedicated results page showing the cheapest eligible box, all eligible boxes cheapest-first, and, for every box ruled out, the exact reasons (dimensions / weight / volume).
-- **Clear feedback**: success and error messages, empty states, field-level validation errors, 404 pages for missing objects.
-- **Safe deletes**: a product that appears on an order cannot be deleted (shows a message instead of crashing).
-- **Django admin** for data entry as an alternative to the UI.
-- **112 automated tests** (service, models, forms, views).
+- **Product management:** Add, view, edit and delete products, including their SKU, dimensions and weight.
+- **Box management:** Maintain box dimensions, maximum weight capacity and cost.
+- **Order management:** Create orders with multiple products and quantities, and view order details and total weight.
+- **Box recommendations:** Compare eligible boxes and display the cheapest option first.
+- **Validation:** Check dimensions, weights and quantities, with helpful feedback for invalid input.
+- **Failure explanations:** Show why a box does not meet the selection criteria.
+- **Django admin:** Manage application data through Django's built-in admin interface.
+- **Automated tests:** Test the recommendation logic and important application behaviour.
 
-## Technology stack
+## Technology
 
-- Python 3.11+ (developed and tested on 3.13)
-- Django 5.2 (LTS)
-- SQLite, Django ORM and migrations
-- Django templates, forms, formsets and plain CSS (no JavaScript, no external services, no API keys)
-- Django's built-in test framework
+- Python 3.11 or later
+- Django 5.2
+- SQLite
+- Django ORM, forms and templates
+- HTML and CSS
+- Django's built-in testing framework
 
-## Requirements
+Dependencies are listed in `requirements.txt`.
 
-- Python 3.11 or newer
-- `pip`
-- Dependencies: only Django (see `requirements.txt`)
+## Getting Started
 
-## Installation
+### 1. Clone the repository
 
 ```bash
-# 1. Create and activate a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
-
-# 2. Install dependencies
-pip install -r requirements.txt
+git clone https://github.com/Vaibhav5941/box_selection_system_submission.git
+cd box_selection_system_submission
 ```
 
-## Migrations
+### 2. Create a virtual environment
+
+On Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+On macOS or Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Apply database migrations
 
 ```bash
 python manage.py migrate
 ```
 
-This creates `db.sqlite3` (ignored by Git). Migrations are already committed in `warehouse/migrations/`; run `python manage.py makemigrations` only if you change a model.
-
-## Create a superuser (optional, for `/admin/`)
-
-```bash
-python manage.py createsuperuser
-```
-
-## Run the application
+### 5. Start the development server
 
 ```bash
 python manage.py runserver
 ```
 
-Open <http://127.0.0.1:8000/>. No environment variables are needed for local development: `DEBUG` is on by default and a random throw-away `SECRET_KEY` is generated at start-up.
+Open http://127.0.0.1:8000/ in your browser.
 
-## Run the tests
+### 6. Open the Django admin (optional)
+
+Create an administrator account:
+
+```bash
+python manage.py createsuperuser
+```
+
+Then visit http://127.0.0.1:8000/admin/.
+
+## Running Tests
+
+Run the complete test suite with:
 
 ```bash
 python manage.py test
-# verbose, one line per test:
+```
+
+For more detailed output:
+
+```bash
 python manage.py test -v 2
 ```
 
-See `TEST_OUTPUT.md` for the captured output of a real run.
+Run Django's configuration check with:
 
-## Sample workflow
-
-1. **Add boxes** (Boxes → Add box), lengths/widths/heights are *internal* dimensions in cm:
-
-   | Name   | L × W × H (cm) | Max weight (kg) | Cost |
-   |--------|----------------|-----------------|------|
-   | Small  | 20 × 15 × 10   | 5               | 1.50 |
-   | Medium | 30 × 25 × 20   | 15              | 3.00 |
-   | Large  | 50 × 40 × 30   | 30              | 6.50 |
-
-2. **Add products** (Products → Add product):
-
-   | Name            | SKU     | L × W × H (cm) | Weight (kg) |
-   |-----------------|---------|----------------|-------------|
-   | Ceramic Mug     | MUG-001 | 12 × 9 × 9     | 0.4         |
-   | Stoneware Plate | PLT-001 | 26 × 26 × 3    | 0.75        |
-   | Poster Tube     | TUB-001 | 60 × 8 × 8     | 0.5         |
-
-3. **Create orders** (Orders → New order) and click **Recommend box**. With the data above the engine gives:
-
-   | Order                    | Total weight | Result                                                                                   |
-   |--------------------------|--------------|------------------------------------------------------------------------------------------|
-   | 1 × Mug                  | 0.4 kg       | **Small** (cheapest); Medium and Large are also eligible                                 |
-   | 2 × Mug + 4 × Plate      | 3.8 kg       | **Large** only. The 26 × 26 plate is wider than Medium's 25 cm side; Small is far too small |
-   | 1 × Poster Tube          | 0.5 kg       | **No suitable box**: the 60 cm tube does not fit any box, and the page explains why         |
-
-## Algorithm explanation
-
-Implemented in `warehouse/services/box_recommendation.py` (pure Python, no Django imports, so it is unit-testable without a database). For each configured box the engine collects every reason the box fails:
-
-1. **Per-item fit with rotation.** Each product, on its own, must fit inside the box's internal dimensions in at least one of the **six** permutations of (length, width, height). A side equal to the box side is allowed (exact fit).
-2. **Weight capacity.** `sum(unit weight × quantity)` over all items must be `<=` the box's maximum weight. Exactly equal is allowed.
-3. **Volume sanity check.** The combined volume of all units must be `<=` the box's internal volume. This is a *necessary* condition for any real packing, so a box that fails it can never hold the order.
-
-A box with no failures is **eligible**. Eligible boxes are sorted by cost, cheapest first (ties: smaller internal volume, then name, then id), and the first is the **primary recommendation**. If nothing is eligible, the result has no recommended box and a message plus per-box reasons; the engine never falls back to an invalid box.
-
-Input safety: invalid dimensions/weights (zero, negative, missing, non-numeric, NaN/infinity), invalid quantities (zero, negative, fractional, non-integer, booleans), unnamed products, empty orders and missing entries raise `RecommendationInputError` with a clear message (the UI shows it). No configured boxes returns a dedicated `NO_BOXES` result. All arithmetic uses `Decimal`, so e.g. 3 × 0.1 kg equals exactly 0.3 kg against a 0.3 kg capacity.
-
-## Assumptions and limitations
-
-- **Not full 3D packing.** Checks 1-3 are necessary, not sufficient. Example: two 6 × 6 × 6 cubes pass every check for a 10 × 10 × 6 box (each fits; 432 ≤ 600 by volume) but cannot actually be packed together, since two cubes need 12 units along some axis. This case is documented in a test (`test_known_limitation_passing_checks_is_not_a_packing_guarantee`) and the results page always displays a disclaimer. Treat results for multi-unit orders as a shortlist to confirm physically or with a real packing algorithm.
-- Only axis-aligned (90°) rotations are considered.
-- One unit system: dimensions in **cm**, weights in **kg**. No conversion is performed. Cost is a plain amount with no currency symbol.
-- Box dimensions must be **internal** (usable) dimensions; padding and packing material are not modelled.
-- Fragility, stacking rules, dimensional weight, and shipping carrier limits are not modelled.
-- An order cannot list the same product twice (combine into one line); a product on an order cannot be deleted.
-- There is no authentication: the app is intended for local use. The Django admin is protected by Django's standard login.
-
-## Project structure
-
+```bash
+python manage.py check
 ```
+
+See `TEST_OUTPUT.md` for the recorded test results. Test counts and results should reflect the latest actual run.
+
+## How the Application Works
+
+1. Add products and enter their dimensions and weight.
+2. Add shipping boxes with their internal dimensions, weight limits and costs.
+3. Create an order and select its products and quantities.
+4. Open the recommendation results for that order.
+5. Compare eligible boxes and use the lowest-cost option as the primary recommendation.
+
+Dimensions are measured in centimetres and weights in kilograms. Box costs are stored as decimal values.
+
+## Recommendation Logic
+
+The selection logic is implemented in `warehouse/services/box_recommendation.py`.
+
+For each box, the application checks the following:
+
+1. **Dimensions:** Each product must fit within the box when considered individually. The algorithm checks all six permutations of the product's length, width and height, allowing the product to be rotated.
+2. **Weight:** The combined weight of the products, including their quantities, must not exceed the box's maximum weight capacity.
+3. **Volume:** The total volume of the ordered items must not exceed the box's internal volume.
+
+Boxes that pass the implemented checks are listed by increasing cost. If multiple boxes have the same cost, the application uses its configured tie-breaking rules.
+
+If no box meets the criteria, the application reports that no suitable option was found instead of recommending a box that failed the checks.
+
+### An important limitation
+
+This is a simplified selection algorithm, not a complete three-dimensional packing solver.
+
+Checking each product individually does not prove that all products can fit together in the same box. The combined-volume check can rule out some impossible choices, but it cannot guarantee a valid arrangement of the remaining products.
+
+For example, two cubes measuring 6 × 6 × 6 cannot both fit inside a 10 × 10 × 6 box, even though each cube fits individually and their combined volume is less than the box's volume.
+
+The recommendation should therefore be treated as a shortlist of possible boxes. A production warehouse system would need a proper packing algorithm to verify the arrangement of all items.
+
+## Project Structure
+
+```text
 box_selection_system/
 ├── manage.py
 ├── requirements.txt
-├── README.md                    # this file
-├── AI_USAGE.md                  # template for YOU to fill in honestly
-├── TEST_OUTPUT.md               # real captured test output
-├── PROGRESS.md                  # build checkpoint / design decisions
-├── SUBMISSION.md                # git commands, ZIP commands, transcript export
-├── LEARNING_REFLECTION_CHECKLIST.md
+├── README.md
+├── AI_USAGE.md
+├── TEST_OUTPUT.md
 ├── .gitignore
-├── config/                      # Django project (settings, root URLs, wsgi/asgi)
-└── warehouse/                   # the app
-    ├── models.py                # Product, Box, Order, OrderItem (+ DB constraints)
-    ├── validators.py            # positive / non-negative validators
-    ├── forms.py                 # ModelForms + order-item formset
-    ├── views.py                 # class-based CRUD views + order creation
+├── config/
+└── warehouse/
+    ├── models.py
+    ├── validators.py
+    ├── forms.py
+    ├── views.py
     ├── urls.py
     ├── admin.py
     ├── services/
-    │   └── box_recommendation.py   # the recommendation engine (pure Python)
+    │   └── box_recommendation.py
     ├── migrations/
-    ├── templates/warehouse/     # base, dashboard, CRUD pages, recommendation page
-    ├── static/warehouse/style.css
+    ├── templates/
+    ├── static/
     └── tests/
-        ├── helpers.py           # test data factories
-        ├── test_service.py      # engine unit tests (no database)
-        ├── test_models.py       # validation, constraints, order totals
-        ├── test_forms.py        # form and formset validation
-        └── test_views.py        # HTTP responses, messages, 404s, CSRF
 ```
 
-## Security notes
+The `config` directory contains the Django project configuration. The `warehouse` app contains the data models, forms, views, recommendation logic, templates and tests.
 
-Development defaults are deliberately convenient; production must set environment variables (see `config/settings.py`):
+## Validation and Security
 
-| Variable | Purpose |
-|----------|---------|
-| `DJANGO_DEBUG` | Set to `0` in production (default is on for local development). |
-| `DJANGO_SECRET_KEY` | **Required** when `DJANGO_DEBUG=0`; the app refuses to start without it. Generate with `python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"`. Never commit it. |
-| `DJANGO_ALLOWED_HOSTS` | Comma-separated hostnames, e.g. `example.com,www.example.com`. |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | Comma-separated origins such as `https://example.com` when behind a proxy. |
-| `DJANGO_SECURE_SSL_REDIRECT` | Defaults to on when not in debug; set to `0` only if TLS is terminated elsewhere and redirected there. |
-| `DJANGO_HSTS_SECONDS` / `DJANGO_HSTS_INCLUDE_SUBDOMAINS` | HSTS controls; default 3600 s, raise once HTTPS is confirmed working. |
+The application uses Django forms and model validation to help prevent invalid data from entering the system. Database constraints should also be used for important rules where supported by the current models.
 
-When `DJANGO_DEBUG=0` the settings also enable secure session and CSRF cookies and content-type nosniff. Always-on protections: CSRF tokens on every form (tested), template auto-escaping, ORM parameterised queries, clickjacking middleware, and DB `CHECK` constraints so invalid rows cannot be stored even if form validation is bypassed.
+CSRF protection and Django's template escaping provide standard protections for form submissions and rendered content.
 
-`python manage.py check --deploy` with production-style variables reports only two optional HSTS warnings (`SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD`) that must be enabled deliberately. A production deployment would also need a real WSGI server, `collectstatic` plus static file serving, and a production-grade database; those are out of scope here.
+The default configuration is intended for local development, not direct production deployment. Before deployment:
 
-## Future improvements
+- Set `DEBUG` to `False`.
+- Configure a secure, private `SECRET_KEY`.
+- Set `ALLOWED_HOSTS` to the appropriate hostnames.
+- Configure HTTPS, secure cookies and other production security settings.
+- Use a suitable production server and configure static file serving.
+- Choose and configure an appropriate production database.
 
-- Real 3D bin packing (e.g. extreme-point or skyline heuristics) with tests against known-solvable and known-impossible cases.
-- Support for several boxes per order (split shipments) when no single box suffices.
-- Unit selection and conversion (cm/in, kg/lb) and a currency setting.
-- Box padding allowance and product fragility/orientation constraints ("this side up").
-- Authentication and per-user permissions; REST API; search, filtering and CSV import for products.
-#   b o x _ s e l e c t i o n _ s y s t e m _ s u b m i s s i o n  
- 
+Review `config/settings.py` for the settings supported by this project.
+
+## Current Limitations
+
+- The recommendation logic does not solve complete 3D packing.
+- Only rotations represented by the six axis-aligned dimension permutations are considered.
+- Product dimensions are expected in centimetres and weights in kilograms.
+- Packaging material, padding, fragility and stacking restrictions are not modelled.
+- The application does not calculate dimensional shipping weight.
+- Authentication and per-user permissions for the warehouse interface are not implemented unless added separately.
+
+## Possible Improvements
+
+Some useful next steps would be to implement and test a proper 3D packing algorithm, support splitting an order across multiple boxes, add search and filtering, and introduce authentication and role-based permissions.
+
+## AI Usage
+
+This project was developed with assistance from AI tools. The tools used, prompts, changes made, mistakes identified and verification steps should be documented in `AI_USAGE.md` based on the actual development process.
+
